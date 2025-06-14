@@ -1,8 +1,9 @@
+from fastapi import FastAPI
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-from email.message import EmailMessage
-import smtplib
+
+app = FastAPI()
 
 # === CONFIGURACIÓN ===
 EMAIL = "gm4526614@gmail.com"
@@ -16,8 +17,6 @@ URL_ABIERTOS = "https://www.contratacionesabiertas.gob.hn/busqueda"
 URL_API_LA = "https://data.lacity.org/resource/n9s8-7k7x.json"
 URL_REMAX = "https://www.roatan-realestate.com/"
 URL_ABOUT_RE = "https://www.aboutroatanrealestate.com/"
-
-# 🚀 NUEVA API REAL DE LUCILA – FUNCIONAL Y LISTA
 URL_API_LUCILA = "https://lucila-api-gm4526614.repl.co/api/resumen?clave=lucila2025"
 
 # === FILTRO DE MES ACTUAL ===
@@ -131,11 +130,15 @@ def lucila_analiza(lines):
 def arquitecto_opina(lines):
     return "🏗️ Arquitecto: revisa los contratos recientes; puedo ayudarte con planos si lo deseas."
 
-# === COMPILAR y ENVIAR CORREO ===
-def generar_y_enviar():
+# === RUTA API ===
+@app.get("/")
+def inicio():
+    return {"mensaje": "Lucila API está en línea y lista 🔍📩"}
+
+@app.get("/api/resumen")
+def api_resumen():
     hoy = datetime.now().strftime("%d %B %Y")
     resumen = [f"📌 Resumen diario – {hoy}", ""]
-
     resumen.extend(rastrear_honduras())
     resumen.append("")
     resumen.extend(rastrear_los_angeles())
@@ -146,20 +149,4 @@ def generar_y_enviar():
     resumen.append("")
     resumen.append(lucila_analiza(resumen))
     resumen.append(arquitecto_opina(resumen))
-
-    msg = EmailMessage()
-    msg["Subject"] = f"📊 Lucila – Informe Diario {datetime.now():%Y/%m/%d}"
-    msg["From"] = msg["To"] = EMAIL
-    msg.set_content("\n\n".join(resumen))
-
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            smtp.login(EMAIL, CLAVE_APP)
-            smtp.send_message(msg)
-        print("✅ Correo enviado correctamente.")
-    except Exception as ex:
-        print(f"❌ Falló al enviar correo: {ex}")
-
-# === EJECUCIÓN PRINCIPAL ===
-if __name__ == "__main__":
-    generar_y_enviar()
+    return {"resultados": resumen}
